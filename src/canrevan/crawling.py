@@ -1,5 +1,6 @@
 import os
 import tqdm
+import time
 import shutil
 from . import utils
 from urllib.request import urlopen
@@ -89,10 +90,15 @@ def _collect_article_urls_worker(queue: Queue,
 def _crawl_articles_worker(output_file: str,
                            article_urls: List[str],
                            queue: Queue):
+    iters = 0
     with open(output_file, 'w', encoding='utf-8') as fp:
         for article_url in article_urls:
             fp.write(_get_article_content(article_url) + '\n')
             queue.put(True)
+
+            iters += 1
+            if iters % 100 == 0:
+                time.sleep(1)
     queue.put(None)
 
 
