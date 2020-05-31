@@ -116,7 +116,7 @@ def start_crawling_articles(output_file: str,
         date_step (int): The number of days to skip.
         max_page (int): The maximum pages to crawl.
     """
-    date_list = utils.drange(start_date, end_date)
+    date_list = utils.drange(start_date, end_date, date_step)
     total_search = len(date_list) * len(category_list)
 
     # Prepare multi-processing.
