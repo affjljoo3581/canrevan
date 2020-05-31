@@ -75,7 +75,7 @@ def _process_canrevan_article_contents(input_file: str,
 
     # Start processes.
     for i in range(args['num-cores']):
-        w = Process(target=_clean_articles_worker,
+        w = Process(target=_tokenize_sentences_worker,
                     args=(cleaned_files[i],
                           tokenized_files[i],
                           args['min-length']))
