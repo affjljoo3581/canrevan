@@ -123,7 +123,7 @@ def start_crawling_articles(output_file: str,
 
     # Prepare multi-processing.
     workers = []
-    queue = Queue(maxsize=num_cores)
+    queue = Queue()
     date_list_chunks = utils.split_list(date_list, chunks=num_cores)
 
     for i in range(num_cores):
