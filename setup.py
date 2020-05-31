@@ -23,7 +23,9 @@ setup(
     python_requires='>=3.6.0',
     install_requires=[
         'tqdm>=4.46.0',
-        'kss==1.3.1'
+        'kss==1.3.1',
+        'bs4',
+        'lxml>=4.5.1'
     ],
 
     entry_points={
