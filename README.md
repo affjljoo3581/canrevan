@@ -1,5 +1,7 @@
 # canrevan
 
+![build](https://github.com/affjljoo3581/canrevan/workflows/build/badge.svg)
+[![codecov](https://codecov.io/gh/affjljoo3581/canrevan/branch/master/graph/badge.svg)](https://codecov.io/gh/affjljoo3581/canrevan)
 [![CodeFactor](https://www.codefactor.io/repository/github/affjljoo3581/canrevan/badge)](https://www.codefactor.io/repository/github/affjljoo3581/canrevan)
 
 ## Introduction
