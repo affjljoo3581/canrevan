@@ -97,7 +97,7 @@ def _crawl_articles_worker(output_file: str,
             queue.put(True)
 
             iters += 1
-            if iters % 100 == 0:
+            if iters % 50 == 0:
                 time.sleep(1)
     queue.put(None)
 
