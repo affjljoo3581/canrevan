@@ -2,6 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/canrevan.svg)](https://badge.fury.io/py/canrevan)
 ![build](https://github.com/affjljoo3581/canrevan/workflows/build/badge.svg)
+[![GitHub license](https://img.shields.io/github/license/affjljoo3581/canrevan)](https://github.com/affjljoo3581/canrevan/blob/master/LICENSE)
 [![codecov](https://codecov.io/gh/affjljoo3581/canrevan/branch/master/graph/badge.svg)](https://codecov.io/gh/affjljoo3581/canrevan)
 [![CodeFactor](https://www.codefactor.io/repository/github/affjljoo3581/canrevan/badge)](https://www.codefactor.io/repository/github/affjljoo3581/canrevan)
 
