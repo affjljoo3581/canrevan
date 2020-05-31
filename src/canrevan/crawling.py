@@ -68,13 +68,32 @@ def _get_article_content(article_url: str) -> str:
     return article_content
 
 
+def _collect_article_urls_worker(queue: Queue,
+                                 category_list: List[str],
+                                 date_list: List[str],
+                                 max_page: int = 100):
+    for category in category_list:
+        for date in date_list:
+            # Get maximum number of pages in navigation.
+            pages = _get_max_nav_pages(category, date, max_page)
+
+            for page in range(1, pages + 1):
+                for url in _get_article_urls_from_nav_page(category,
+                                                           date,
+                                                           page):
+                    queue.put(url)
+            queue.put(True)
+    queue.put(None)
+
+
 def _crawl_articles_worker(output_file: str,
                            article_urls: List[str],
                            queue: Queue):
     with open(output_file, 'w', encoding='utf-8') as fp:
         for article_url in article_urls:
             fp.write(_get_article_content(article_url) + '\n')
-            queue.put(None)
+            queue.put(True)
+    queue.put(None)
 
 
 def start_crawling_articles(output_file: str,
@@ -99,20 +118,37 @@ def start_crawling_articles(output_file: str,
     """
     date_list = utils.drange(start_date, end_date)
     total_search = len(date_list) * len(category_list)
-    tqdm_iter = tqdm.trange(total_search, desc='[*] collect article urls')
 
+    # Prepare multi-processing.
+    workers = []
+    queue = Queue()
+    date_list_chunks = utils.split_list(date_list, chunks=num_cores)
+
+    for i in range(num_cores):
+        w = Process(target=_collect_article_urls_worker,
+                    args=(queue, category_list, date_list_chunks[i], max_page))
+        w.daemon = True
+        w.start()
+
+        workers.append(w)
+
+    # Gather article urls from processes.
     article_urls = []
-    for category in category_list:
-        for date in date_list:
-            # Get maximum number of pages in navigation.
-            pages = _get_max_nav_pages(category, date, max_page)
+    exit_processes = 0
+    tqdm_iter = tqdm.trange(total_search, desc='[*] collect article urls')
+    while True:
+        article_url = queue.get()
 
-            for page in range(1, pages + 1):
-                article_urls += _get_article_urls_from_nav_page(
-                    category, date, page)
-
-            # Update progress bar.
+        if article_url is None:
+            exit_processes += 1
+        elif article_url is True:
             tqdm_iter.update()
+        else:
+            article_urls.append(article_url)
+
+        # Exit for waiting processes.
+        if exit_processes == num_cores:
+            break
     tqdm_iter.close()
 
     print(f'[*] successfully collecting article urls.'
@@ -135,8 +171,14 @@ def start_crawling_articles(output_file: str,
         workers.append(w)
 
     # Show crawling progress.
+    exit_processes = 0
     for _ in tqdm.trange(len(article_urls), desc='[*] crawl articles'):
-        queue.get(block=True)
+        if queue.get() is None:
+            exit_processes += 1
+
+        # Exit for waiting processes.
+        if exit_processes == num_cores:
+            break
 
     # Merge temporary files into `output_file`.
     print(f'[*] finish crawling articles. merge chunks into [{output_file}].')
