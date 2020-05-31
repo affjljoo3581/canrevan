@@ -8,7 +8,7 @@ from typing import List
 _CANDIDATES = string.digits + string.ascii_lowercase
 
 
-def drange(start: str, end: str) -> List[str]:
+def drange(start: str, end: str, step: int = 1) -> List[str]:
     """Return dates between ``start`` and ``end``.
 
     Arguments:
@@ -24,9 +24,9 @@ def drange(start: str, end: str) -> List[str]:
     start_date = datetime.strptime(start, '%Y%m%d')
     end_date = datetime.strptime(end, '%Y%m%d')
 
-    ndays = (end_date - start_date).days
-    return [(start_date + timedelta(days=d)).strftime('%Y%m%d')
-            for d in range(ndays + 1)]
+    iters = (end_date - start_date).days // step
+    return [(start_date + timedelta(days=d * step)).strftime('%Y%m%d')
+            for d in range(iters)]
 
 
 def split_list(seq: List, chunks: int):

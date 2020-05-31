@@ -28,6 +28,10 @@ def _main():
     parser.add_argument('--end',
                         required=True,
                         help='end date string')
+    parser.add_argument('--step',
+                        default=1,
+                        type=int,
+                        help='number of days to skip')
     parser.add_argument('--max_page',
                         default=100,
                         type=int,
@@ -45,6 +49,7 @@ def _main():
                             args.category,
                             args.start,
                             args.end,
+                            args.step,
                             args.max_page)
 
     # Remove temporary directory.

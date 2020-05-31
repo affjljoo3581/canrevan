@@ -83,6 +83,7 @@ def start_crawling_articles(output_file: str,
                             category_list: List[str],
                             start_date: str,
                             end_date: str,
+                            date_step: int,
                             max_page: int = 100):
     """Crawl news articles in parallel.
 
@@ -93,6 +94,7 @@ def start_crawling_articles(output_file: str,
         category_list (list): The list of categories to crawl from.
         start_date (str): Start date string.
         end_date (str): End date string.
+        date_step (int): The number of days to skip.
         max_page (int): The maximum pages to crawl.
     """
     date_list = utils.drange(start_date, end_date)
