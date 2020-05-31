@@ -26,7 +26,7 @@ def drange(start: str, end: str, step: int = 1) -> List[str]:
 
     iters = (end_date - start_date).days // step
     return [(start_date + timedelta(days=d * step)).strftime('%Y%m%d')
-            for d in range(iters)]
+            for d in range(iters + 1)]
 
 
 def split_list(seq: List, chunks: int):
