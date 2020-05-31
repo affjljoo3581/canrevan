@@ -13,7 +13,7 @@ def _main():
     parser.add_argument('--temporary',
                         default='tmp',
                         help='temporary directory path')
-    parser.add_argument('--num_process',
+    parser.add_argument('--num_cores',
                         default=4,
                         type=int,
                         help='number of processes')
@@ -41,7 +41,7 @@ def _main():
     # Crawl news articles.
     start_crawling_articles(args.output_file,
                             args.temporary,
-                            args.num_process,
+                            args.num_cores,
                             args.category,
                             args.start,
                             args.end,
