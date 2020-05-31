@@ -114,10 +114,3 @@ __extension__ = {
         'min-length': {'type': int, 'default': 50}
     }
 }
-
-with open('articles.txt', 'r', encoding='utf-8') as fp:
-    for _ in range(5):
-        line = fp.readline()
-        print(line)
-        print(_clean_article_content(line))
-        print('======================')
