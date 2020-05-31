@@ -134,6 +134,7 @@ def start_crawling_articles(output_file: str,
         workers.append(w)
 
     # Gather article urls from processes.
+    updated = 0
     article_urls = []
     exit_processes = 0
     tqdm_iter = tqdm.trange(total_search, desc='[*] collect article urls')
@@ -144,11 +145,12 @@ def start_crawling_articles(output_file: str,
             exit_processes += 1
         elif article_url is True:
             tqdm_iter.update()
+            updated += 1
+
+            if updated % 1000 == 0:
+                time.sleep(5)
         else:
             article_urls.append(article_url)
-
-        if len(article_urls) % 1000 == 0:
-            time.sleep(5)
 
         # Exit for waiting processes.
         if exit_processes == num_cores:
