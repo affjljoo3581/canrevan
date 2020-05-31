@@ -1,5 +1,7 @@
 # canrevan
 
+[![CodeFactor](https://www.codefactor.io/repository/github/affjljoo3581/canrevan/badge)](https://www.codefactor.io/repository/github/affjljoo3581/canrevan)
+
 ## Introduction
 **canrevan**은 대량의 네이버 뉴스 기사를 수집하는 라이브러리입니다. 간단하게 한국어 뉴스
 데이터셋을 구성하도록 도와줍니다.
