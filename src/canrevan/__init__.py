@@ -31,7 +31,7 @@ def _main():
     parser.add_argument('--max_page',
                         default=100,
                         type=int,
-                        help='end date string')
+                        help='maximum number of pages to search')
     args = parser.parse_args()
 
     # Create temporary directory.
