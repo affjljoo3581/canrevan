@@ -1,7 +1,7 @@
 import os
 import tqdm
-from . import utils
 import shutil
+from . import utils
 from urllib.request import urlopen
 from bs4 import BeautifulSoup, SoupStrainer
 from multiprocessing import Process, Queue
@@ -79,7 +79,7 @@ def _crawl_articles_worker(output_file: str,
 
 def start_crawling_articles(output_file: str,
                             temporary: str,
-                            num_process: int,
+                            num_cores: int,
                             category_list: List[str],
                             start_date: str,
                             end_date: str,
@@ -89,7 +89,7 @@ def start_crawling_articles(output_file: str,
     Arguments:
         output_file (str): Output file path.
         temporary (str): Temporary directory path.
-        num_process (int): The number of processes.
+        num_cores (int): The number of processes.
         category_list (list): The list of categories to crawl from.
         start_date (str): Start date string.
         end_date (str): End date string.
@@ -118,13 +118,13 @@ def start_crawling_articles(output_file: str,
 
     # Prepare multi-processing.
     workers = []
-    queue = Queue(maxsize=10 * num_process)
+    queue = Queue()
 
     # Create temporary files and split articles into chunks.
-    crawled_files = utils.random_filenames(temporary, num_process)
-    article_list_chunks = utils.split_list(article_urls, chunks=num_process)
+    crawled_files = utils.random_filenames(temporary, num_cores)
+    article_list_chunks = utils.split_list(article_urls, chunks=num_cores)
 
-    for i in range(num_process):
+    for i in range(num_cores):
         w = Process(target=_crawl_articles_worker,
                     args=(crawled_files[i], article_list_chunks[i], queue))
         w.daemon = True
