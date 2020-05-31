@@ -90,15 +90,10 @@ def _collect_article_urls_worker(queue: Queue,
 def _crawl_articles_worker(output_file: str,
                            article_urls: List[str],
                            queue: Queue):
-    iters = 0
     with open(output_file, 'w', encoding='utf-8') as fp:
         for article_url in article_urls:
             fp.write(_get_article_content(article_url) + '\n')
             queue.put(True)
-
-            iters += 1
-            if iters % 50 == 0:
-                time.sleep(1)
     queue.put(None)
 
 
@@ -127,7 +122,7 @@ def start_crawling_articles(output_file: str,
 
     # Prepare multi-processing.
     workers = []
-    queue = Queue()
+    queue = Queue(maxsize=num_cores)
     date_list_chunks = utils.split_list(date_list, chunks=num_cores)
 
     for i in range(num_cores):
@@ -151,6 +146,9 @@ def start_crawling_articles(output_file: str,
             tqdm_iter.update()
         else:
             article_urls.append(article_url)
+
+        if len(article_urls) % 1000 == 0:
+            time.sleep(5)
 
         # Exit for waiting processes.
         if exit_processes == num_cores:
