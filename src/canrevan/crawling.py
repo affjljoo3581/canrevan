@@ -1,6 +1,5 @@
 import os
 import tqdm
-import time
 import shutil
 from . import utils
 from urllib.request import urlopen
