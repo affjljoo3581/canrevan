@@ -73,18 +73,18 @@ def _collect_article_urls_worker(queue: Queue,
                                  category_list: List[str],
                                  date_list: List[str],
                                  max_page: int = 100):
+    article_urls = []
     for category in category_list:
         for date in date_list:
             # Get maximum number of pages in navigation.
             pages = _get_max_nav_pages(category, date, max_page)
 
             for page in range(1, pages + 1):
-                for url in _get_article_urls_from_nav_page(category,
-                                                           date,
-                                                           page):
-                    queue.put(url)
-            queue.put(True)
-    queue.put(None)
+                article_urls += _get_article_urls_from_nav_page(category,
+                                                                date,
+                                                                page)
+            queue.put(None)
+    queue.put(article_urls)
 
 
 def _crawl_articles_worker(output_file: str,
@@ -138,14 +138,13 @@ def start_crawling_articles(output_file: str,
     exit_processes = 0
     tqdm_iter = tqdm.trange(total_search, desc='[*] collect article urls')
     while True:
-        article_url = queue.get()
+        batch_article_urls = queue.get()
 
-        if article_url is None:
-            exit_processes += 1
-        elif article_url is True:
+        if batch_article_urls is None:
             tqdm_iter.update()
         else:
-            article_urls.append(article_url)
+            article_urls += batch_article_urls
+            exit_processes += 1
 
         # Exit for waiting processes.
         if exit_processes == num_cores:
