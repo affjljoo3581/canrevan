@@ -92,7 +92,6 @@ def _crawl_articles_worker(output_file: str,
                            queue: Queue):
     with open(output_file, 'w', encoding='utf-8') as fp:
         for article_url in article_urls:
-            time.sleep(0.01)
             fp.write(_get_article_content(article_url) + '\n')
             queue.put(True)
     queue.put(None)
