@@ -2,6 +2,7 @@ import os
 import tqdm
 import shutil
 from . import utils
+from urllib.error import URLError
 from urllib.request import urlopen
 from bs4 import BeautifulSoup, SoupStrainer
 from multiprocessing import Process, Queue
@@ -79,9 +80,13 @@ def _collect_article_urls_worker(queue: Queue,
             pages = _get_max_nav_pages(category, date, max_page)
 
             for page in range(1, pages + 1):
-                article_urls += _get_article_urls_from_nav_page(category,
-                                                                date,
-                                                                page)
+                try:
+                    article_urls += _get_article_urls_from_nav_page(category,
+                                                                    date,
+                                                                    page)
+                except URLError:
+                    pass
+
             queue.put(None)
     queue.put(article_urls)
 
@@ -91,7 +96,11 @@ def _crawl_articles_worker(output_file: str,
                            queue: Queue):
     with open(output_file, 'w', encoding='utf-8') as fp:
         for article_url in article_urls:
-            fp.write(_get_article_content(article_url) + '\n')
+            try:
+                fp.write(_get_article_content(article_url) + '\n')
+            except URLError:
+                pass
+
             queue.put(True)
     queue.put(None)
 
