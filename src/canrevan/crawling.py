@@ -1,4 +1,5 @@
 import os
+import re
 import tqdm
 import shutil
 from . import utils
@@ -22,12 +23,13 @@ def _get_max_nav_pages(category: int,
 
     # Read navigation page.
     with urlopen(nav_url) as res:
-        # Use `SoupStrainer` to improve performance.
-        strainer = SoupStrainer('div', {'class': 'paging'})
-        document = BeautifulSoup(res.read(), 'lxml', parse_only=strainer)
-        max_page_elem = document.find('strong')
+        document = res.read().decode(res.headers.get_content_charset())
 
-    return int(max_page_elem.get_text())
+        # Extract current page from container.
+        document = document[document.find('<div class="paging">'):]
+        document = document[:document.find('</div>')]
+
+    return int(re.search(r'<strong>(.*?)</strong>', document).group(1))
 
 
 def _get_article_urls_from_nav_page(category: int,
@@ -39,12 +41,29 @@ def _get_article_urls_from_nav_page(category: int,
 
     # Read navigation page and extract article links.
     with urlopen(nav_url) as res:
-        # Use `SoupStrainer` to improve performance.
-        strainer = SoupStrainer('div', {'class': 'list_body newsflash_body'})
-        document = BeautifulSoup(res.read(), 'lxml', parse_only=strainer)
+        document = res.read().decode(res.headers.get_content_charset())
+        document = document[document.find('<ul class="type06_headline">'):]
 
-        article_items = document.find_all('li')
-        article_urls = [item.find('a').get('href') for item in article_items]
+        # Extract article url containers.
+        list1 = document[:document.find('</ul>')]
+        list2 = document[document.find('</ul>') + 5:]
+        list2 = list2[:list2.find('</ul>')]
+
+        document = list1 + list2
+
+        # Extract all article urls from their containers.
+        article_urls = []
+        while '<dt>' in document:
+            document = document[document.find('<dt>'):]
+            container = document[:document.find('</dt>')]
+
+            if not container.strip():
+                continue
+
+            article_urls.append(
+                re.search(r'<a href="(.*?)"', container).group(1))
+
+            document = document[document.find('</dt>'):]
 
     return article_urls
 
