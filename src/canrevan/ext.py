@@ -12,7 +12,8 @@ _re_special_symbols = re.compile(r'[\/|*^@\#▲▶◆◀■【】\\\=]')
 
 def _clean_article_content(content: str) -> str:
     content = _re_special_symbols.sub(' ', content)
-    content = content[content.find('다.') + 2:content.rfind('다.') + 2]
+    content = content[content.find('다.') + 2:content.rfind('다.')]
+    content = content[:content.rfind('다.') + 2]
     return ' '.join(content.split())
 
 
