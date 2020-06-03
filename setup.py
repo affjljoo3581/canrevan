@@ -5,7 +5,7 @@ dist.Distribution().fetch_build_eggs(['Cython'])
 
 setup(
     name='canrevan',
-    version='1.1.4',
+    version='1.2.0',
 
     author='Jungwoo Park',
     author_email='affjljoo3581@gmail.com',
