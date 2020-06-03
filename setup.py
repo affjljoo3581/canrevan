@@ -25,7 +25,8 @@ setup(
         'tqdm>=4.46.0',
         'kss==1.3.1',
         'bs4',
-        'lxml>=4.5.1'
+        'lxml>=4.5.1',
+        'urllib3'
     ],
 
     entry_points={
