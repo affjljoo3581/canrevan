@@ -2,108 +2,104 @@ import os
 import re
 import tqdm
 import shutil
+import urllib3
 from . import utils
-from urllib.error import URLError
-from urllib.request import urlopen
 from bs4 import BeautifulSoup, SoupStrainer
 from multiprocessing import Process, Queue
 from typing import List
 
 
-_NAV_ARTICLES_URL = ('http://news.naver.com/main/list.nhn?mode=LSD&mid=shm'
-                     '&sid1={category}&date={date}&page={page}')
-
-
-def _get_max_nav_pages(category: int,
+def _get_max_nav_pages(pool: urllib3.HTTPConnectionPool,
+                       category: int,
                        date: str,
                        max_page: int = 100) -> int:
-    nav_url = _NAV_ARTICLES_URL.format(category=category,
-                                       date=date,
-                                       page=max_page)
+    nav_url = ('https://news.naver.com/main/list.nhn?mode=LSD&mid=shm'
+               '&sid1={category}&date={date}&page={page}'
+               .format(category=category, date=date, page=max_page))
 
-    # Read navigation page.
-    with urlopen(nav_url) as res:
-        document = res.read().decode(res.headers.get_content_charset())
-
-        # Extract current page from container.
-        document = document[document.find('<div class="paging">'):]
-        document = document[:document.find('</div>')]
+    # Read navigation page and extract current page from container.
+    document = pool.request('GET', nav_url).data.decode('euc-kr')
+    document = document[document.find('<div class="paging">'):]
+    document = document[:document.find('</div>')]
 
     return int(re.search(r'<strong>(.*?)</strong>', document).group(1))
 
 
-def _get_article_urls_from_nav_page(category: int,
+def _get_article_urls_from_nav_page(pool: urllib3.HTTPConnectionPool,
+                                    category: int,
                                     date: str,
                                     page: int) -> List[str]:
-    nav_url = _NAV_ARTICLES_URL.format(category=category,
-                                       date=date,
-                                       page=page)
+    nav_url = ('https://news.naver.com/main/list.nhn?mode=LSD&mid=shm'
+               '&sid1={category}&date={date}&page={page}'
+               .format(category=category, date=date, page=page))
 
     # Read navigation page and extract article links.
-    with urlopen(nav_url) as res:
-        document = res.read().decode(res.headers.get_content_charset())
-        document = document[document.find('<ul class="type06_headline">'):]
+    document = pool.request('GET', nav_url).data.decode('euc-kr')
+    document = document[document.find('<ul class="type06_headline">'):]
 
-        # Extract article url containers.
-        list1 = document[:document.find('</ul>')]
-        list2 = document[document.find('</ul>') + 5:]
-        list2 = list2[:list2.find('</ul>')]
+    # Extract article url containers.
+    list1 = document[:document.find('</ul>')]
+    list2 = document[document.find('</ul>') + 5:]
+    list2 = list2[:list2.find('</ul>')]
 
-        document = list1 + list2
+    document = list1 + list2
 
-        # Extract all article urls from their containers.
-        article_urls = []
-        while '<dt>' in document:
-            document = document[document.find('<dt>'):]
-            container = document[:document.find('</dt>')]
+    # Extract all article urls from their containers.
+    article_urls = []
+    while '<dt>' in document:
+        document = document[document.find('<dt>'):]
+        container = document[:document.find('</dt>')]
 
-            if not container.strip():
-                continue
+        if not container.strip():
+            continue
 
-            article_urls.append(
-                re.search(r'<a href="(.*?)"', container).group(1))
+        article_urls.append(
+            re.search(r'<a href="(.*?)"', container).group(1))
 
-            document = document[document.find('</dt>'):]
+        document = document[document.find('</dt>'):]
 
     return article_urls
 
 
-def _get_article_content(article_url: str) -> str:
-    with urlopen(article_url) as res:
-        # Use `SoupStrainer` to improve performance.
-        strainer = SoupStrainer('div', attrs={'id': 'articleBodyContents'})
-        document = BeautifulSoup(res.read(), 'lxml', parse_only=strainer)
-        content = document.find('div')
+def _get_article_content(pool: urllib3.HTTPSConnectionPool,
+                         article_url: str) -> str:
+    res = pool.request('GET', article_url).data.decode('euc-kr')
 
-        # Skip if there is no article content in the page.
-        if content is None:
-            return ''
+    # Use `SoupStrainer` to improve performance.
+    strainer = SoupStrainer('div', attrs={'id': 'articleBodyContents'})
+    document = BeautifulSoup(res, 'lxml', parse_only=strainer)
+    content = document.find('div')
 
-        # Remove unnecessary tags.
-        for child in content.find_all():
-            child.clear()
+    # Skip if there is no article content in the page.
+    if content is None:
+        return ''
 
-        article_content = ' '.join(content.get_text().split())
+    # Remove unnecessary tags.
+    for child in content.find_all():
+        child.clear()
 
-    return article_content
+    return ' '.join(content.get_text().split())
 
 
 def _collect_article_urls_worker(queue: Queue,
                                  category_list: List[str],
                                  date_list: List[str],
                                  max_page: int = 100):
+    pool = urllib3.HTTPSConnectionPool('news.naver.com')
+
     article_urls = []
     for category in category_list:
         for date in date_list:
             # Get maximum number of pages in navigation.
-            pages = _get_max_nav_pages(category, date, max_page)
+            pages = _get_max_nav_pages(pool, category, date, max_page)
 
             for page in range(1, pages + 1):
                 try:
-                    article_urls += _get_article_urls_from_nav_page(category,
+                    article_urls += _get_article_urls_from_nav_page(pool,
+                                                                    category,
                                                                     date,
                                                                     page)
-                except URLError:
+                except urllib3.exceptions.TimeoutError:
                     pass
 
             queue.put(None)
@@ -113,11 +109,14 @@ def _collect_article_urls_worker(queue: Queue,
 def _crawl_articles_worker(output_file: str,
                            article_urls: List[str],
                            queue: Queue):
+    pool = urllib3.HTTPSConnectionPool('news.naver.com')
+
     with open(output_file, 'w', encoding='utf-8') as fp:
         for article_url in article_urls:
             try:
-                fp.write(_get_article_content(article_url) + '\n')
-            except URLError:
+                fp.write(_get_article_content(pool, article_url) + '\n')
+            except (urllib3.exceptions.TimeoutError,
+                    urllib3.exceptions.HostChangedError):
                 pass
 
             queue.put(True)
