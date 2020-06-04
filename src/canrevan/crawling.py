@@ -9,7 +9,17 @@ from multiprocessing import Process, Queue
 from typing import List
 
 
-def _get_max_nav_pages(pool: urllib3.HTTPConnectionPool,
+def _read_html_from_url(pool: urllib3.HTTPSConnectionPool,
+                        url: str) -> str:
+    try:
+        response = pool.request('GET', url)
+        return response.data.decode(
+            response.headers['content-type'].lower().split('charset=')[-1])
+    except:
+        return ''
+
+
+def _get_max_nav_pages(pool: urllib3.HTTPSConnectionPool,
                        category: int,
                        date: str,
                        max_page: int = 100) -> int:
@@ -18,14 +28,14 @@ def _get_max_nav_pages(pool: urllib3.HTTPConnectionPool,
                .format(category=category, date=date, page=max_page))
 
     # Read navigation page and extract current page from container.
-    document = pool.request('GET', nav_url).data.decode('euc-kr')
+    document = _read_html_from_url(pool, nav_url)
     document = document[document.find('<div class="paging">'):]
     document = document[:document.find('</div>')]
 
     return int(re.search(r'<strong>(.*?)</strong>', document).group(1))
 
 
-def _get_article_urls_from_nav_page(pool: urllib3.HTTPConnectionPool,
+def _get_article_urls_from_nav_page(pool: urllib3.HTTPSConnectionPool,
                                     category: int,
                                     date: str,
                                     page: int) -> List[str]:
@@ -34,7 +44,7 @@ def _get_article_urls_from_nav_page(pool: urllib3.HTTPConnectionPool,
                .format(category=category, date=date, page=page))
 
     # Read navigation page and extract article links.
-    document = pool.request('GET', nav_url).data.decode('euc-kr')
+    document = _read_html_from_url(pool, nav_url)
     document = document[document.find('<ul class="type06_headline">'):]
 
     # Extract article url containers.
@@ -63,11 +73,11 @@ def _get_article_urls_from_nav_page(pool: urllib3.HTTPConnectionPool,
 
 def _get_article_content(pool: urllib3.HTTPSConnectionPool,
                          article_url: str) -> str:
-    res = pool.request('GET', article_url).data.decode('euc-kr')
-
     # Use `SoupStrainer` to improve performance.
     strainer = SoupStrainer('div', attrs={'id': 'articleBodyContents'})
-    document = BeautifulSoup(res, 'lxml', parse_only=strainer)
+    document = BeautifulSoup(_read_html_from_url(pool, article_url),
+                             'lxml',
+                             parse_only=strainer)
     content = document.find('div')
 
     # Skip if there is no article content in the page.
@@ -94,13 +104,8 @@ def _collect_article_urls_worker(queue: Queue,
             pages = _get_max_nav_pages(pool, category, date, max_page)
 
             for page in range(1, pages + 1):
-                try:
-                    article_urls += _get_article_urls_from_nav_page(pool,
-                                                                    category,
-                                                                    date,
-                                                                    page)
-                except urllib3.exceptions.TimeoutError:
-                    pass
+                article_urls += _get_article_urls_from_nav_page(
+                    pool, category, date, page)
 
             queue.put(None)
     queue.put(article_urls)
@@ -113,12 +118,7 @@ def _crawl_articles_worker(output_file: str,
 
     with open(output_file, 'w', encoding='utf-8') as fp:
         for article_url in article_urls:
-            try:
-                fp.write(_get_article_content(pool, article_url) + '\n')
-            except (urllib3.exceptions.TimeoutError,
-                    urllib3.exceptions.HostChangedError):
-                pass
-
+            fp.write(_get_article_content(pool, article_url) + '\n')
             queue.put(True)
     queue.put(None)
 
