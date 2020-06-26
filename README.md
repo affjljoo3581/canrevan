@@ -78,6 +78,8 @@ $ canrevan --category 100 101 --start 20200501 --end 20200531 --max_page 5
 [canrevan.ext]
 num-cores       = 6
 min-length      = 50
+max-length      = 500
+split-sent      = true
 
 # ...
 
