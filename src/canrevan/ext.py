@@ -84,6 +84,9 @@ def _process_canrevan_article_contents(input_file: str,
     for _ in range(args['num-cores']):
         queue.put(None)
 
+    for w in workers:
+        w.join()
+
     # Prepare tokenizing sentences in parallel.
     workers = []
     tokenized_files = utils.random_filenames(temporary, args['num-cores'])
