@@ -27,7 +27,7 @@ def _clean_articles_worker(output_file: str, queue: Queue):
                 break
 
             # Write cleaned article content to output file.
-            fp.write(_clean_article_content(content) + '\n')
+            fp.write(_clean_article_content(content) + '\n\n')
 
 
 def _tokenize_sentences_worker(input_file: str, output_file: str,
