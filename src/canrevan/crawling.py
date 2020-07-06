@@ -121,7 +121,8 @@ def _collect_article_urls_worker(queue: Queue,
         queue.put(sum(article_urls_stack, []))
 
     # Execute async main function.
-    asyncio.run(main_fn())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main_fn())
 
 
 def _crawl_articles_worker(queue: Queue,
@@ -147,7 +148,8 @@ def _crawl_articles_worker(queue: Queue,
         queue.put(None)
 
     # Execute async main function.
-    asyncio.run(main_fn())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main_fn())
 
 
 def start_crawling_articles(output_file: str,
