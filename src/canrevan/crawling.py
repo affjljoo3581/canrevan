@@ -2,49 +2,45 @@ import os
 import re
 import tqdm
 import shutil
-import urllib3
+import asyncio
+import aiohttp
+import aiofiles
 from . import utils
 from bs4 import BeautifulSoup, SoupStrainer
 from multiprocessing import Process, Queue
 from typing import List
 
 
-def _read_html_from_url(pool: urllib3.HTTPSConnectionPool,
-                        url: str) -> str:
-    try:
-        response = pool.request('GET', url)
-        return response.data.decode(
-            response.headers['content-type'].lower().split('charset=')[-1])
-    except:
-        return ''
-
-
-def _get_max_nav_pages(pool: urllib3.HTTPSConnectionPool,
-                       category: int,
-                       date: str,
-                       max_page: int = 100) -> int:
+async def _get_max_nav_pages(sess: aiohttp.ClientSession,
+                             category: int,
+                             date: str,
+                             max_page: int = 100) -> int:
     nav_url = ('https://news.naver.com/main/list.nhn?mode=LSD&mid=shm'
                '&sid1={category}&date={date}&page={page}'
                .format(category=category, date=date, page=max_page))
 
     # Read navigation page and extract current page from container.
-    document = _read_html_from_url(pool, nav_url)
+    async with sess.request('GET', nav_url) as resp:
+        document = await resp.text()
+
     document = document[document.find('<div class="paging">'):]
     document = document[:document.find('</div>')]
 
     return int(re.search(r'<strong>(.*?)</strong>', document).group(1))
 
 
-def _get_article_urls_from_nav_page(pool: urllib3.HTTPSConnectionPool,
-                                    category: int,
-                                    date: str,
-                                    page: int) -> List[str]:
+async def _get_article_urls_from_nav_page(sess: aiohttp.ClientSession,
+                                          category: int,
+                                          date: str,
+                                          page: int) -> List[str]:
     nav_url = ('https://news.naver.com/main/list.nhn?mode=LSD&mid=shm'
                '&sid1={category}&date={date}&page={page}'
                .format(category=category, date=date, page=page))
 
     # Read navigation page and extract article links.
-    document = _read_html_from_url(pool, nav_url)
+    async with sess.request('GET', nav_url) as resp:
+        document = await resp.text()
+
     document = document[document.find('<ul class="type06_headline">'):]
 
     # Extract article url containers.
@@ -71,13 +67,14 @@ def _get_article_urls_from_nav_page(pool: urllib3.HTTPSConnectionPool,
     return article_urls
 
 
-def _get_article_content(pool: urllib3.HTTPSConnectionPool,
-                         article_url: str) -> str:
+async def _get_article_content(sess: aiohttp.ClientSession,
+                               article_url: str) -> str:
     # Use `SoupStrainer` to improve performance.
+    async with sess.request('GET', article_url) as resp:
+        document = await resp.text()
+
     strainer = SoupStrainer('div', attrs={'id': 'articleBodyContents'})
-    document = BeautifulSoup(_read_html_from_url(pool, article_url),
-                             'lxml',
-                             parse_only=strainer)
+    document = BeautifulSoup(document, 'lxml', parse_only=strainer)
     content = document.find('div')
 
     # Skip if there is no article content in the page.
@@ -94,33 +91,63 @@ def _get_article_content(pool: urllib3.HTTPSConnectionPool,
 def _collect_article_urls_worker(queue: Queue,
                                  category_list: List[str],
                                  date_list: List[str],
-                                 max_page: int = 100):
-    pool = urllib3.HTTPSConnectionPool('news.naver.com')
+                                 max_page: int = 100,
+                                 max_tasks: int = 50):
+    async def main_fn():
+        @utils.notifiable
+        async def async_fn(sess, category, date):
+            article_urls = []
 
-    article_urls = []
-    for category in category_list:
-        for date in date_list:
             # Get maximum number of pages in navigation.
-            pages = _get_max_nav_pages(pool, category, date, max_page)
+            pages = await _get_max_nav_pages(sess, category, date, max_page)
 
+            # Collect all article urls from the given page index.
             for page in range(1, pages + 1):
-                article_urls += _get_article_urls_from_nav_page(
-                    pool, category, date, page)
+                article_urls += await _get_article_urls_from_nav_page(
+                    sess, category, date, page)
 
-            queue.put(None)
-    queue.put(article_urls)
+            return article_urls
+
+        ctx = utils.Context(max_tasks=max_tasks)
+        async with aiohttp.ClientSession() as sess:
+            article_urls_stack, errors = await ctx.run((
+                async_fn(sess, category, date,
+                         callback=lambda: queue.put(None))
+                for category in category_list
+                for date in date_list))
+
+        # Flatten the collected article urls and return it by putting to the
+        # queue.
+        queue.put(sum(article_urls_stack, []))
+
+    # Execute async main function.
+    asyncio.run(main_fn())
 
 
-def _crawl_articles_worker(output_file: str,
+def _crawl_articles_worker(queue: Queue,
+                           output_file: str,
                            article_urls: List[str],
-                           queue: Queue):
-    pool = urllib3.HTTPSConnectionPool('news.naver.com')
+                           max_tasks: int = 50):
+    async def main_fn():
+        @utils.notifiable
+        async def async_fn(sess, article_url, fp):
+            # Get news article content and save it to the output file.
+            await fp.write(
+                (await _get_article_content(sess, article_url)) + '\n')
 
-    with open(output_file, 'w', encoding='utf-8') as fp:
-        for article_url in article_urls:
-            fp.write(_get_article_content(pool, article_url) + '\n')
-            queue.put(True)
-    queue.put(None)
+        ctx = utils.Context(max_tasks=max_tasks)
+        async with aiohttp.ClientSession() as sess:
+            async with aiofiles.open(output_file, 'w', encoding='utf-8') as fp:
+                _, errors = await ctx.run((
+                    async_fn(sess, article_url, fp,
+                             callback=lambda: queue.put(True))
+                    for article_url in article_urls))
+
+        # Notify that current process is finished.
+        queue.put(None)
+
+    # Execute async main function.
+    asyncio.run(main_fn())
 
 
 def start_crawling_articles(output_file: str,
@@ -130,19 +157,8 @@ def start_crawling_articles(output_file: str,
                             start_date: str,
                             end_date: str,
                             date_step: int,
-                            max_page: int = 100):
-    """Crawl news articles in parallel.
-
-    Arguments:
-        output_file (str): Output file path.
-        temporary (str): Temporary directory path.
-        num_cores (int): The number of processes.
-        category_list (list): The list of categories to crawl from.
-        start_date (str): Start date string.
-        end_date (str): End date string.
-        date_step (int): The number of days to skip.
-        max_page (int): The maximum pages to crawl.
-    """
+                            max_page: int = 100,
+                            max_tasks: int = 50):
     date_list = utils.drange(start_date, end_date, date_step)
     total_search = len(date_list) * len(category_list)
 
@@ -153,7 +169,11 @@ def start_crawling_articles(output_file: str,
 
     for i in range(num_cores):
         w = Process(target=_collect_article_urls_worker,
-                    args=(queue, category_list, date_list_chunks[i], max_page))
+                    args=(queue,
+                          category_list,
+                          date_list_chunks[i],
+                          max_page,
+                          max_tasks))
         w.daemon = True
         w.start()
 
@@ -190,7 +210,10 @@ def start_crawling_articles(output_file: str,
 
     for i in range(num_cores):
         w = Process(target=_crawl_articles_worker,
-                    args=(crawled_files[i], article_list_chunks[i], queue))
+                    args=(queue,
+                          crawled_files[i],
+                          article_list_chunks[i],
+                          max_tasks))
         w.daemon = True
         w.start()
 
