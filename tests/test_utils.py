@@ -12,7 +12,10 @@ def test_context_run():
         return i
 
     ctx = Context(max_tasks=10)
-    result, errors = asyncio.run(ctx.run(test_fn(i) for i in range(100)))
+
+    loop = asyncio.get_event_loop()
+    result, errors = loop.run_until_complete(
+        ctx.run(test_fn(i) for i in range(100)))
 
     assert errors == 0
     assert set(result) == set(range(100))
