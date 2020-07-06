@@ -5,7 +5,7 @@ dist.Distribution().fetch_build_eggs(['Cython'])
 
 setup(
     name='canrevan',
-    version='1.3.3',
+    version='2.0.0',
 
     author='Jungwoo Park',
     author_email='affjljoo3581@gmail.com',
@@ -27,6 +27,7 @@ setup(
         'bs4',
         'lxml>=4.5.1',
         'aiohttp',
+        'aiofiles'
     ],
 
     entry_points={
