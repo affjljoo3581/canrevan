@@ -1,7 +1,21 @@
 from canrevan.utils import (drange,
                             random_filename,
                             random_filenames,
-                            split_list)
+                            split_list,
+                            Context)
+import asyncio
+
+
+def test_context_run():
+    async def test_fn(i):
+        await asyncio.sleep(0.1)
+        return i
+
+    ctx = Context(max_tasks=10)
+    result, errors = asyncio.run(ctx.run(test_fn(i) for i in range(100)))
+
+    assert errors == 0
+    assert set(result) == set(range(100))
 
 
 def test_drange_creates_correct_date_range():
