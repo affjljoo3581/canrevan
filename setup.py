@@ -26,7 +26,7 @@ setup(
         'kss==1.3.1',
         'bs4',
         'lxml>=4.5.1',
-        'urllib3'
+        'aiohttp',
     ],
 
     entry_points={
