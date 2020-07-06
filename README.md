@@ -42,7 +42,8 @@ NLP task에서 가장 중요한 부분 중 하나는 데이터셋입니다. 특�
 * kss==1.3.1
 * bs4
 * lxml>=4.5.1
-* urllib3
+* aiohttp
+* aiofiles
 
 ## Installation
 ### With pip
