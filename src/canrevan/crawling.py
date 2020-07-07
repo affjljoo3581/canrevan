@@ -11,6 +11,14 @@ from multiprocessing import Process, Queue
 from typing import List
 
 
+def _korean_characters_ratio(text: str) -> float:
+    korean_characters = 0
+    for c in text:
+        if ord("가") <= ord(c) and ord(c) <= ord('힣'):
+            korean_characters += 1
+    return korean_characters / len(text)
+
+
 async def _get_max_nav_pages(sess: aiohttp.ClientSession,
                              category: int,
                              date: str,
@@ -133,8 +141,9 @@ def _crawl_articles_worker(queue: Queue,
         @utils.notifiable
         async def async_fn(sess, article_url, fp):
             # Get news article content and save it to the output file.
-            await fp.write(
-                (await _get_article_content(sess, article_url)) + '\n')
+            content = await _get_article_content(sess, article_url)
+            if _korean_characters_ratio(content) > 0.5:
+                await fp.write(content + '\n')
 
         ctx = utils.Context(max_tasks=max_tasks)
         async with aiohttp.ClientSession() as sess:
