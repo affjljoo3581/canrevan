@@ -10,6 +10,16 @@ from typing import Dict, Any
 _re_special_symbols = re.compile(r'[\/|*^@\#▲▶◆◀■【】\\\=]')
 
 
+def _normalize_quotes(text: str) -> str:
+    text = text.replace('\u0060', '\'')
+    text = text.replace('\u00b4', '\'')
+    text = text.replace('\u2018', '\'')
+    text = text.replace('\u2019', '\'')
+    text = text.replace('\u201c', '\"')
+    text = text.replace('\u201d', '\"')
+    return text
+
+
 def _clean_article_content(content: str) -> str:
     content = _re_special_symbols.sub(' ', content)
     content = content[content.find('다.') + 2:content.rfind('다.')]
@@ -40,7 +50,7 @@ def _tokenize_sentences_worker(input_file: str, output_file: str,
             if not line.strip():
                 # Write the rest sentences.
                 if not split_sent and len(total_lines.strip()) > min_len:
-                    dst.write(total_lines.strip() + '\n')
+                    dst.write(_normalize_quotes(total_lines.strip()) + '\n')
                 total_lines = ''
                 continue
 
@@ -49,10 +59,11 @@ def _tokenize_sentences_worker(input_file: str, output_file: str,
 
                 if split_sent:
                     if len(s) > min_len and len(s) < max_len:
-                        dst.write(s + '\n')
+                        dst.write(_normalize_quotes(s) + '\n')
                 else:
                     if len(total_lines) + len(s) > max_len:
-                        dst.write(total_lines.strip() + '\n')
+                        dst.write(_normalize_quotes(total_lines.strip())
+                                  + '\n')
                         total_lines = ''
                     total_lines += s + ' '
 
