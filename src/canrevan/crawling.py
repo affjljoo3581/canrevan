@@ -116,8 +116,12 @@ def _collect_article_urls_worker(queue: Queue,
 
             return article_urls
 
+        # If there is not `User-Agent` in request header, then the response
+        # should be with `500 Internal Error`.
+        headers = {'user-agent': 'canrevan'}
+
         ctx = utils.Context(max_tasks=max_tasks)
-        async with aiohttp.ClientSession() as sess:
+        async with aiohttp.ClientSession(headers=headers) as sess:
             article_urls_stack, errors = await ctx.run((
                 async_fn(sess, category, date,
                          callback=lambda: queue.put(None))
@@ -145,8 +149,12 @@ def _crawl_articles_worker(queue: Queue,
             if _korean_characters_ratio(content) > 0.5:
                 await fp.write(content + '\n')
 
+        # If there is not `User-Agent` in request header, then the response
+        # should be with `500 Internal Error`.
+        headers = {'user-agent': 'canrevan'}
+
         ctx = utils.Context(max_tasks=max_tasks)
-        async with aiohttp.ClientSession() as sess:
+        async with aiohttp.ClientSession(headers=headers) as sess:
             async with aiofiles.open(output_file, 'w', encoding='utf-8') as fp:
                 _, errors = await ctx.run((
                     async_fn(sess, article_url, fp,
