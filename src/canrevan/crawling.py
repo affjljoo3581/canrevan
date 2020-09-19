@@ -30,7 +30,7 @@ class Crawler:
                 return await resp.text()
 
             # Run `parse_fn` in subprocess from process-pool for parallelism.
-            loop = asyncio.get_running_loop()
+            loop = asyncio.get_event_loop()
             return await loop.run_in_executor(
                 pool, parse_fn, await resp.text())
 
