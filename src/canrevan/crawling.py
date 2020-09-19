@@ -77,7 +77,8 @@ class Crawler:
                 results.append(data)
 
         results = []
-        asyncio.run(self._crawl_and_reduce(urls, parse_fn, callback_fn))
+        asyncio.get_event_loop().run_until_complete(
+            self._crawl_and_reduce(urls, parse_fn, callback_fn))
 
         return results
 
@@ -101,6 +102,7 @@ class Crawler:
                     fp.write(str(data) + '\n')
 
             written = 0
-            asyncio.run(self._crawl_and_reduce(urls, parse_fn, callback_fn))
+            asyncio.get_event_loop().run_until_complete(
+                self._crawl_and_reduce(urls, parse_fn, callback_fn))
 
         return written
