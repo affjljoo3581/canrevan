@@ -7,7 +7,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/affjljoo3581/canrevan/badge)](https://www.codefactor.io/repository/github/affjljoo3581/canrevan)
 
 ## Introduction
-**canrevan**은 대량의 네이버 뉴스 기사를 수집하는 라이브러리입니다. 간단하게 한국어 뉴스
+`canrevan`은 대량의 네이버 뉴스 기사를 수집하는 라이브러리입니다. 간단하게 한국어 뉴스
 데이터셋을 구성하도록 도와줍니다.
 
 NLP task에서 가장 중요한 부분 중 하나는 데이터셋입니다. 특히 한국어의 경우, 영어에 비해
@@ -25,7 +25,7 @@ NLP task에서 가장 중요한 부분 중 하나는 데이터셋입니다. 특�
 * 데이터의 품질이 우수합니다. 기본적으로 뉴스 기사는 맞춤법 뿐만 아니라 내용상으로 잘
 구성되어 있습니다.
 * 비교적 잘 정형화되어 있습니다. 인터넷 뉴스 기사는 암묵적으로 일정한 규칙과 구조를 가지고
-있습니다. 파싱하기 쉽습니다.
+있습니다. 정규화하기 쉽습니다.
 * 다양한 분야의 문서가 존재합니다. 뉴스 기사는 분야와 주제를 가리지 않습니다. 정치, 사회,
 경제 등등의 주제를 다룹니다.
 
@@ -33,27 +33,26 @@ NLP task에서 가장 중요한 부분 중 하나는 데이터셋입니다. 특�
 플랫폼에서 다양한 언론사의 방대한 뉴스 기사를 수집할 수 있습니다. 실제로 많은 연구자들이
 네이버 뉴스를 통해 기사를 수집합니다.
 
-**canrevan**은 네이버 뉴스에서 기사를 수집하도록 도와줍니다. 명령창에서 한 줄로 수
+`canrevan`은 네이버 뉴스에서 기사를 수집하도록 도와줍니다. 명령창에서 한 줄로 수
 기가바이트의 데이터를 손쉽게 수집할 수 있습니다. 자세한 내용은 [여기](#Example)를
 참고하시기 바랍니다.
 
 ## Dependencies
 * tqdm>=4.46.0
-* kss==1.3.1
 * bs4
 * lxml>=4.5.1
 * aiohttp
-* aiofiles
+* langumo
 
 ## Installation
 ### With pip
-canrevan은 pypi에 등록되어 있습니다. pip 명령어를 통해 쉽게 설치할 수 있습니다.
+PyPI에서 canrevan을 설치할 수 있습니다. 자세한 명령어는 다음과 같습니다.
 ```console
 $ pip install canrevan
 ```
 
 ### From source
-pip을 이용하는 대신, 소스코드에서 직접 빌드하여 설치할 수 있습니다.
+혹은, 원격 저장소에서 복제하여 소스코드에서 직접 설치할 수 있습니다.
 ```console
 $ git clone https://github.com/affjljoo3581/canrevan.git
 $ cd canrevan
@@ -61,32 +60,25 @@ $ python setup.py install
 ```
 
 ## Example
-수집하고자 하는 카테고리의 id를 [네이버 뉴스](https://news.naver.com/)에서 확인합니다. 이 예제에서는 정치(100)와 경제(101) 카테고리에 대한 뉴스를 수집하겠습니다. 다음은 2020년 5월 1일부터 31일까지 5개의 페이지에 대한 기사를 수집하는 명령입니다. 자세한 명령 사용법은 ``canrevan --help``를 입력하시기 바랍니다.
+수집하고자 하는 카테고리의 id를 [네이버 뉴스](https://news.naver.com/)에서 확인합니다. 본 예제에서는 정치(100)와 경제(101) 카테고리에 대한 뉴스를 수집해봅시다. 다음은 2020년 5월 1일부터 31일까지 5개의 페이지에 대한 기사를 수집하는 명령입니다. 자세한 사용법은 ``canrevan --help``를 참고하시기 바랍니다.
 ```console
-$ canrevan --category 100 101 --start 20200501 --end 20200531 --max_page 5
+$ canrevan --category 100 101 --start_date 20200501 --end_date 20200531 --max_page 5
 ```
 성공적으로 뉴스 기사가 수집되었다면, 다음과 같은 출력을 확인할 수 있습니다.
 ```
-[*] collect article urls: 100%|█████████████████| 62/62 [00:32<00:00,  1.93it/s]
-[*] successfully collecting article urls. total articles: 6200
-[*] crawl articles: 100%|███████████████████| 6200/6200 [04:11<00:00, 24.63it/s]
-[*] finish crawling articles. merge chunks into [articles.txt].
+[*] navigation pages: 310
+[*] collect article urls: 100%|█████████████████████████████████████████████████████████████| 310/310 [00:05<00:00, 60.43it/s]
+[*] total collected articles: 4998
+[*] crawl news article contents: 100%|███████████████████████████████████████████████████| 4998/4998 [00:24<00:00, 200.41it/s]
+[*] finish crawling 4781 news articles to [articles.txt]
 ```
 
-## Expanda Extension
-**canrevan**은 편리한 데이터셋 구성을 위해 **[Expanda](https://github.com/affjljoo3581/Expanda) extension**을 지원합니다. canrevan의 extension name은 ``canrevan.ext``이며, ``expanda show canrevan.ext``로 정보를 확인할 수 있습니다. 기본적인 설정파일 구조는 다음과 같습니다.
-```ini
-[canrevan.ext]
-num-cores       = 6
-min-length      = 50
-max-length      = 500
-split-sent      = true
+## Format
+`canrevan`은 수집된 뉴스 기사를 `json.encoder.encode_basestring`으로 인코딩합니다.
 
-# ...
+    "국방부는 18일부터 입대하는 모든 장정의 검체를 채취할 예정이며, 8주간 매주 6,300여명이 코로나19 검사를 받는다고 18일 밝혔다.\n군이 훈련소에서 자체적으로 검체를 채취하고, 질병관리본부와 계약을 맺은 민간 업체 등이 검체 이송과 검사를 담당한다. 대규모 인원의 빠른 검사를 위해 취합검사법(Pooling)이 활용된다.\n군 관계자는 “이태원 클럽 등으로 인해 코로나19 20대 감염 사례가 늘었다”며 “집단 생활하는 훈련병이 뒤늦게 코로나19 확진을 받으면 집단 감염이 발생할 수 있기 때문에 선제적으로 전원 검사를 시행한다”고 설명했다.\n군은 확진자가 나온 지역에서 입소하거나 확진자와 동선이 겹칠 경우에 예방적 격리와 검사를 시행했었다.\n현재까지 이태원 일대를 방문했다고 부대에 알린 훈련병 83명이 코로나19 검사를 받았고, 전원 음성 판정이 나왔다.\n훈련병이 입소 후 일주일 전 확진 판정을 받으면 귀가 조치되고, 일주일이 넘은 뒤 확진을 받으면 군 소속으로 치료를 받게 된다.\n앞서 지난달 13일 육군훈련소에 입소한 3명이 코로나19 확진 판정을 받아 귀가 조치됐다."
 
-[build]
-input-files         =
-    --canrevan.ext  src/articles.txt
+모든 수집된 뉴스 기사들은 위와 같은 포맷을 가지고 있습니다. `json.decoder.scanstring` 함수를 이용하여 개행 문자를 포함한 평문으로 디코딩할 수 있습니다.
 
-# ...
-```
+## License
+`canrevan`은 Apache-2.0 라이센스가 적용되어 있습니다.
