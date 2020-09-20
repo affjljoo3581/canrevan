@@ -71,8 +71,8 @@ class Crawler:
 
             futures.append(f)
 
-        # Wait for the tasks to be complete and close the http client session and
-        # process-pool executor
+        # Wait for the tasks to be complete and close the http client session
+        # and process-pool executor
         await asyncio.wait(futures)
         await sess.close()
         pool.shutdown(wait=True)
