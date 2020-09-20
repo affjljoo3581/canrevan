@@ -10,7 +10,7 @@ def _get_resource_content(name: str) -> str:
 
 
 def test_extracting_article_urls():
-    article_urls = extract_article_urls(_get_resource_content('nav.html'))
+    article_urls = extract_article_urls(_get_resource_content('nav_html'))
     article_urls = [url[55:] for url in article_urls]
     assert article_urls == ['sid1=100&sid2=265&oid=029&aid=0002625369',
                             'sid1=100&sid2=265&oid=079&aid=0003409069',
@@ -35,7 +35,7 @@ def test_extracting_article_urls():
 
 
 def test_parsing_article_contents():
-    content = parse_article_content(_get_resource_content('article.html'))
+    content = parse_article_content(_get_resource_content('article_html'))
     assert (json.decoder.scanstring(content, 1)[0]
             == '이재명 경기도지사가 19일 \"지자체에 지역화폐가 확산하면 단점이 '
                '심화할 수 있다\"고 지적한 국민의힘 윤희숙 의원을 향해 \"언론 뒤에 '
