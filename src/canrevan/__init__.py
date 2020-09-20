@@ -10,7 +10,7 @@ def _main():
     args = _create_argument_parser().parse_args()
 
     # Create a crawler for collecting article urls and news contents.
-    crawler = Crawler(concurrent_requests=args.max_jobs,
+    crawler = Crawler(concurrent_tasks=args.max_jobs,
                       num_parsing_processes=args.num_cores,
                       request_headers={'user-agent': 'canrevan'},
                       request_timeout=args.timeout)
