@@ -15,7 +15,7 @@ def _get_current_page_from_html(content: str) -> int:
 
 
 def test_crawl_reduce_array():
-    crawler = Crawler(concurrent_requests=500,
+    crawler = Crawler(concurrent_tasks=500,
                       request_headers={'user-agent': 'canrevan'},
                       request_timeout=1)
     current_pages = crawler.reduce_to_array(
@@ -28,7 +28,7 @@ def test_crawl_reduce_array():
 
 
 def test_crawl_reduce_file():
-    crawler = Crawler(concurrent_requests=500,
+    crawler = Crawler(concurrent_tasks=500,
                       request_headers={'user-agent': 'canrevan'},
                       request_timeout=1)
 
