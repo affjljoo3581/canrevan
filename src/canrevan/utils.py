@@ -29,7 +29,7 @@ def is_normal_character(c: str) -> bool:
             or ord('가') <= ord(c) <= ord('힣'))
 
 
-def ignore_aiohttp_ssl_error(loop: AbstractEventLoop, context: Dict):
+def ignore_aiohttp_ssl_error(loop: AbstractEventLoop):
     original_handler = loop.get_exception_handler()
 
     def ignore_ssl_error(loop: AbstractEventLoop, context: Dict):
