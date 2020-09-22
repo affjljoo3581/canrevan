@@ -91,7 +91,7 @@ class Crawler:
             if data is not None:
                 results.append(data)
 
-        # Get event loop and set to ignore SSLError from `aiohttp` module.
+        # Get event loop and set to ignore `SSLError`s from `aiohttp` module.
         loop = asyncio.get_event_loop()
         utils.ignore_aiohttp_ssl_error(loop)
 
@@ -120,7 +120,8 @@ class Crawler:
 
                     fp.write(str(data) + '\n')
 
-            # Get event loop and set to ignore SSLError from `aiohttp` module.
+            # Get event loop and set to ignore `SSLError`s from `aiohttp`
+            # module.
             loop = asyncio.get_event_loop()
             utils.ignore_aiohttp_ssl_error(loop)
 
