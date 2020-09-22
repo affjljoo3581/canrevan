@@ -1,5 +1,7 @@
+from asyncio import AbstractEventLoop
+from ssl import SSLError, SSL_PROTOCOLS
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Dict
 
 
 def drange(start: str, end: str, step: int = 1) -> List[str]:
@@ -25,3 +27,21 @@ def is_normal_character(c: str) -> bool:
             or ord('a') <= ord(c) <= ord('z')
             or ord('A') <= ord(c) <= ord('Z')
             or ord('가') <= ord(c) <= ord('힣'))
+
+
+def ignore_aiohttp_ssl_error(loop: AbstractEventLoop, context: Dict):
+    original_handler = loop.get_exception_handler()
+
+    def ignore_ssl_error(loop: AbstractEventLoop, context: Dict):
+        # Ignore SSLError from `aiohttp` module. It is known as a bug.
+        if (context.get('message') == 'SSL error in data received'
+                and isinstance(context.get('exception'), SSLError)
+                and isinstance(context.get('protocol'), SSL_PROTOCOLS)):
+            return
+
+        if original_handler is not None:
+            original_handler(loop, context)
+        else:
+            loop.default_exception_handler(context)
+
+    loop.set_exception_handler(ignore_ssl_error)
