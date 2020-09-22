@@ -30,7 +30,7 @@ class Crawler:
                                parse_fn: Optional[Callable[[str], T]] = None
                                ) -> Optional[str]:
         try:
-            async with sess.get(url, verify_ssl=False) as resp:
+            async with sess.get(url, ssl=False) as resp:
                 content = await resp.text()
 
             # Run `parse_fn` in subprocess from process-pool for parallelism.
