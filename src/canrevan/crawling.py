@@ -1,6 +1,7 @@
 import asyncio
 import warnings
 from asyncio import Semaphore
+import canrevan.utils as utils
 from aiohttp import ClientSession, ClientTimeout
 from concurrent.futures import Executor, ProcessPoolExecutor
 from typing import List, Iterable, Dict, Callable, Optional, TypeVar
@@ -30,7 +31,7 @@ class Crawler:
                                parse_fn: Optional[Callable[[str], T]] = None
                                ) -> Optional[str]:
         try:
-            async with sess.get(url, ssl=False) as resp:
+            async with sess.get(url) as resp:
                 content = await resp.text()
 
             # Run `parse_fn` in subprocess from process-pool for parallelism.
@@ -90,8 +91,12 @@ class Crawler:
             if data is not None:
                 results.append(data)
 
+        # Get event loop and set to ignore SSLError from `aiohttp` module.
+        loop = asyncio.get_event_loop()
+        utils.ignore_aiohttp_ssl_error(loop)
+
         results = []
-        asyncio.get_event_loop().run_until_complete(
+        loop.run_until_complete(
             self._crawl_and_reduce(urls, parse_fn, callback_fn))
 
         return results
@@ -115,8 +120,12 @@ class Crawler:
 
                     fp.write(str(data) + '\n')
 
+            # Get event loop and set to ignore SSLError from `aiohttp` module.
+            loop = asyncio.get_event_loop()
+            utils.ignore_aiohttp_ssl_error(loop)
+
             written = 0
-            asyncio.get_event_loop().run_until_complete(
+            loop.run_until_complete(
                 self._crawl_and_reduce(urls, parse_fn, callback_fn))
 
         return written
