@@ -48,8 +48,7 @@ class Crawler:
             self,
             urls: Iterable[str],
             parse_fn: Optional[Callable[[str], T]] = None,
-            callback_fn: Optional[Callable[[T], None]] = None
-            ):
+            callback_fn: Optional[Callable[[Optional[T]], None]] = None):
         # Create a semaphore to limit the number of concurrent tasks, a
         # process-pool executor to run `parse_fn` in parallel and a http client
         # session for asynchronous HTTP requests.
@@ -84,7 +83,7 @@ class Crawler:
                         update_fn: Optional[Callable[[], None]] = None
                         ) -> List[T]:
         # A callback function to reduce collected data to the array.
-        def callback_fn(data: T):
+        def callback_fn(data: Optional[T]):
             if update_fn is not None:
                 update_fn()
 
@@ -108,7 +107,7 @@ class Crawler:
                        update_fn: Optional[Callable[[], None]] = None) -> int:
         with open(filename, 'w') as fp:
             # A callback function to reduce collected data to the output file.
-            def callback_fn(data: T):
+            def callback_fn(data: Optional[T]):
                 if update_fn is not None:
                     update_fn()
 
