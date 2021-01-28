@@ -12,7 +12,7 @@ def _main():
     # Create a crawler for collecting article urls and news contents.
     crawler = Crawler(concurrent_tasks=args.max_jobs,
                       num_parsing_processes=args.num_cores,
-                      request_headers={'user-agent': 'canrevan'},
+                      request_headers={'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36'},
                       request_timeout=args.timeout)
 
     # Collect article urls from navigation pages.
