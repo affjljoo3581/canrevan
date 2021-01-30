@@ -7,6 +7,13 @@ import canrevan.parsing as parsing
 import canrevan.utils as utils
 from canrevan.crawling import Crawler
 
+DEFAULT_USER_AGENT_STRING = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/87.0.4280.66 "
+    "Safari/537.36"
+)
+
 
 def _main():
     args = _create_argument_parser().parse_args()
@@ -15,7 +22,7 @@ def _main():
     crawler = Crawler(
         concurrent_tasks=args.max_jobs,
         num_parsing_processes=args.num_cores,
-        request_headers={"user-agent": "canrevan"},
+        request_headers={"user-agent": args.user_agent},
         request_timeout=args.timeout,
     )
 
@@ -99,6 +106,11 @@ def _create_argument_parser() -> argparse.ArgumentParser:
         default=4,
         type=int,
         help="number of multi-processing cores for parsing",
+    )
+    parser.add_argument(
+        "--user-agent",
+        default=DEFAULT_USER_AGENT_STRING,
+        help="use custom user-agent string",
     )
 
     return parser
