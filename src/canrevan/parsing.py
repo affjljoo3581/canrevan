@@ -33,7 +33,7 @@ def extract_article_urls(document: str) -> List[str]:
 
 
 def parse_article_content(document: str) -> str:
-    strainer = SoupStrainer("div", attrs={"id": "articleBodyContents"})
+    strainer = SoupStrainer("div", attrs={"id": "dic_area"})
     document = BeautifulSoup(document, "lxml", parse_only=strainer)
     content = document.find("div")
 
