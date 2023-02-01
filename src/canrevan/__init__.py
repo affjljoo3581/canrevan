@@ -116,7 +116,7 @@ def _create_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--include_reporter_name",
         default=False,
-        help="",
+        help="remove broadcasting station, reporter name in front sentence",
     )
 
     return parser
