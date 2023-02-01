@@ -32,7 +32,7 @@ def _main():
 
     with tqdm.tqdm(nav_urls, desc="[*] collect article urls") as tbar:
         article_urls = crawler.reduce_to_array(
-            nav_urls, parse_fn=parsing.extract_article_urls, update_fn=tbar.update
+            nav_urls, args.include_reporter_name, parse_fn=parsing.extract_article_urls, update_fn=tbar.update
         )
 
     # Flatten the grouped urls and remove duplicates from the array.
@@ -45,6 +45,7 @@ def _main():
         total_contents = crawler.reduce_to_file(
             article_urls,
             args.output_path,
+            args.include_reporter_name,
             parse_fn=parsing.parse_article_content,
             update_fn=tbar.update,
         )
@@ -71,7 +72,7 @@ def _create_argument_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--output_path", default="articles.txt", help="output file path"
+        "--output_path", default="첫줄포함.txt", help="output file path"
     )
     parser.add_argument(
         "--category",
@@ -111,6 +112,11 @@ def _create_argument_parser() -> argparse.ArgumentParser:
         "--user-agent",
         default=DEFAULT_USER_AGENT_STRING,
         help="use custom user-agent string",
+    )
+    parser.add_argument(
+        "--include_reporter_name",
+        default=False,
+        help="",
     )
 
     return parser

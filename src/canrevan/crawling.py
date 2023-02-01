@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import warnings
 from asyncio import Semaphore
@@ -33,7 +34,8 @@ class Crawler:
         pool: Executor,
         sess: ClientSession,
         url: str,
-        parse_fn: Optional[Callable[[str], T]] = None,
+        include_reporter_name: bool,
+        parse_fn: Optional[Callable[[str, bool], T]] = None,
     ) -> Optional[str]:
         try:
             async with sess.get(url) as resp:
@@ -42,7 +44,7 @@ class Crawler:
             # Run `parse_fn` in subprocess from process-pool for parallelism.
             if parse_fn is not None:
                 content = await asyncio.get_event_loop().run_in_executor(
-                    pool, parse_fn, content
+                    pool, parse_fn, content, include_reporter_name
                 )
         except Exception:
             content = None
@@ -53,6 +55,7 @@ class Crawler:
     async def _crawl_and_reduce(
         self,
         urls: Iterable[str],
+        include_reporter_name: bool,
         parse_fn: Optional[Callable[[str], T]] = None,
         callback_fn: Optional[Callable[[Optional[T]], None]] = None,
     ):
@@ -72,7 +75,7 @@ class Crawler:
 
             # Create a fetching future.
             f = asyncio.ensure_future(
-                self._fetch_and_parse(sem, pool, sess, url, parse_fn)
+                self._fetch_and_parse(sem, pool, sess, url, include_reporter_name, parse_fn)
             )
 
             # Add done-callback function to the future.
@@ -90,6 +93,7 @@ class Crawler:
     def reduce_to_array(
         self,
         urls: Iterable[str],
+        include_reporter_name: bool,
         parse_fn: Optional[Callable[[str], T]] = None,
         update_fn: Optional[Callable[[], None]] = None,
     ) -> List[T]:
@@ -106,7 +110,7 @@ class Crawler:
         utils.ignore_aiohttp_ssl_error(loop)
 
         results = []
-        loop.run_until_complete(self._crawl_and_reduce(urls, parse_fn, callback_fn))
+        loop.run_until_complete(self._crawl_and_reduce(urls, include_reporter_name, parse_fn, callback_fn))
 
         return results
 
@@ -114,6 +118,7 @@ class Crawler:
         self,
         urls: Iterable[str],
         filename: str,
+        include_reporter_name: bool,
         parse_fn: Optional[Callable[[str], T]] = None,
         update_fn: Optional[Callable[[], None]] = None,
     ) -> int:
@@ -136,6 +141,6 @@ class Crawler:
             utils.ignore_aiohttp_ssl_error(loop)
 
             written = 0
-            loop.run_until_complete(self._crawl_and_reduce(urls, parse_fn, callback_fn))
+            loop.run_until_complete(self._crawl_and_reduce(urls, include_reporter_name, parse_fn, callback_fn))
 
         return written

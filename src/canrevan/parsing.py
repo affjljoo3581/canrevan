@@ -20,19 +20,19 @@ def extract_article_urls(document: str, _: bool) -> List[str]:
     # Extract all article urls from the containers.
     article_urls = []
     while "<dt>" in document:
-        document = document[document.find("<dt>") :]
+        document = document[document.find("<dt>"):]
         container = document[: document.find("</dt>")]
 
         if not container.strip():
             continue
 
         article_urls.append(re.search(r'<a href="(.*?)"', container).group(1))
-        document = document[document.find("</dt>") :]
+        document = document[document.find("</dt>"):]
 
     return article_urls
 
 
-def parse_article_content(document: str) -> str:
+def parse_article_content(document: str, include_reporter_name: bool) -> str:
     strainer = SoupStrainer("div", attrs={"id": "dic_area"})
     document = BeautifulSoup(document, "lxml", parse_only=strainer)
     content = document.find("div")
@@ -48,7 +48,7 @@ def parse_article_content(document: str) -> str:
             child.clear()
 
     content = content.get_text(separator="\n").strip()
-    content = "\n".join([line.strip() for line in content.splitlines() if line.strip()])
+    content = "\n".join([line.strip() for line in content.split('\n')])
 
     # Skip the contents which contain too many non-Korean characters.
     if utils.korean_character_ratio(content) < 0.5:
@@ -59,8 +59,18 @@ def parse_article_content(document: str) -> str:
         [
             line
             for line in content.splitlines()
-            if utils.is_normal_character(line[0]) and line[-1] == "."
+            if line[-1] == "."
         ]
     )
+
+    # Remove reporter name part if set.
+    if not include_reporter_name:
+        splitted = content.split(sep='\n')
+        content = "\n".join(splitted[1:])
+        content = utils.remove_reporter_name(splitted[0]) + content
+
+    # Remove empty string
+    if content == "":
+        raise ValueError("there is no news article content.")
 
     return json.encoder.encode_basestring(content)
