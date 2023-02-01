@@ -3,9 +3,9 @@ from typing import List
 
 import tqdm
 
-import canrevan.parsing as parsing
-import canrevan.utils as utils
-from canrevan.crawling import Crawler
+import parsing as parsing
+import utils as utils
+from crawling import Crawler
 
 DEFAULT_USER_AGENT_STRING = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

@@ -4,15 +4,15 @@ from typing import List
 
 from bs4 import BeautifulSoup, SoupStrainer
 
-import canrevan.utils as utils
+import utils as utils
 
 
-def extract_article_urls(document: str) -> List[str]:
-    document = document[document.find('<ul class="type06_headline">') :]
+def extract_article_urls(document: str, _: bool) -> List[str]:
+    document = document[document.find('<ul class="type06_headline">'):]
 
     # Extract article url containers.
     list1 = document[: document.find("</ul>")]
-    list2 = document[document.find("</ul>") + 5 :]
+    list2 = document[document.find("</ul>") + 5:]
     list2 = list2[: list2.find("</ul>")]
 
     document = list1 + list2
