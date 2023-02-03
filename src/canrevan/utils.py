@@ -46,3 +46,8 @@ def ignore_aiohttp_ssl_error(loop: AbstractEventLoop):
             loop.default_exception_handler(context)
 
     loop.set_exception_handler(ignore_ssl_error)
+
+def remove_reporter_name(s: str):
+    import re
+    s = re.sub('^((\[.+\]|\(.+\))(\s?([가-힣 ]{2,} (기자|특파원),?)+\s*=?)+|(\[.+\]|\(.+\)))\s*', '', s)
+    return s
